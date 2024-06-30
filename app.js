@@ -212,7 +212,7 @@ $(document).ready(function() {
         var moveStartTime = Date.now();
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/get_move',
+            url: 'http://20.151.235.96:5000/get_move',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
@@ -265,7 +265,7 @@ $(document).ready(function() {
         console.log("Making evaluation ...");
         console.log("Current board FEN:", board.fen());
         $.ajax({
-            url: 'http://127.0.0.1:5000/get_evaluation',
+            url: 'http://20.151.235.96:5000/get_evaluation',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
