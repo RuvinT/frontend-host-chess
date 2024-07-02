@@ -212,7 +212,7 @@ $(document).ready(function() {
         var moveStartTime = Date.now();
 
         $.ajax({
-            url: 'http://20.151.235.96:5000/get_move',
+            url: 'https://chess-master.azurewebsites.net/get_move',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
@@ -265,7 +265,7 @@ $(document).ready(function() {
         console.log("Making evaluation ...");
         console.log("Current board FEN:", board.fen());
         $.ajax({
-            url: 'https://20.151.235.96:5000/get_evaluation',
+            url: 'https://chess-master.azurewebsites.net/get_evaluation',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
