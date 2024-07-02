@@ -9,6 +9,22 @@ $(document).ready(function() {
         onDragStart: onDragStart, // Add onDragStart handler
         onDrop: onDrop
     });
+    // Handle window resize to make the board responsive
+     window.addEventListener('resize', function() {
+        resizeBoard();
+    });
+
+    function resizeBoard() {
+        var containerWidth = document.getElementById('boardContainer').offsetWidth;
+        var containerHeight = document.getElementById('boardContainer').offsetHeight;
+        var newSize = Math.min(containerWidth, containerHeight);
+        document.getElementById('board').style.width = newSize + 'px';
+        document.getElementById('board').style.height = newSize + 'px';
+        board.resize();
+    }
+
+    resizeBoard(); // Initial resize to set the board size correctly
+
     var game = new Chess();
     var playerTurn = true; // Flag to track player's turn
     var evaluations = {}; // Object to store evaluations for each move
