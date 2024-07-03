@@ -2,8 +2,6 @@ $(document).ready(function() {
     var playerColor = 'white'; // Player plays white by default
     var gameStarted = false; // Flag to track if the game has started
 
-    const whiteSquareGrey = '#a9a9a9'
-    const blackSquareGrey = '#696969'
 
     var board = Chessboard2('board', {
         pieceTheme: 'img/chesspieces/alpha/{piece}.png',
@@ -12,9 +10,9 @@ $(document).ready(function() {
         draggable: true, // Allow dragging
         onDragStart: onDragStart, // Add onDragStart handler
         onDrop: onDrop,
-        onMousedownSquare,
-        onMouseenterSquare,
-        onMouseleaveSquare
+        //onMousedownSquare,
+        //onMouseenterSquare,
+       // onMouseleaveSquare
     });
 
     // Handle window resize to make the board responsive
@@ -135,7 +133,7 @@ $(document).ready(function() {
     }
     function onDrop(source, target, piece, newPos, oldPos, orientation) {
 
-        removeGreySquares()
+      
         // Validate move
         var move = game.move({
             from: source.source,
@@ -427,23 +425,7 @@ $(document).ready(function() {
         board.position(game.fen());
     }
 
-    /////////////////////////////////////////////////////
 
-    // Event listeners for touch events
-
-    document.getElementById('board').addEventListener('touchstart', function(evt) {
-        var square = board.getSquareAtEvent(evt.touches[0]);
-        onMousedownSquare({ square: square });
-    });
-
-    document.getElementById('board').addEventListener('touchmove', function(evt) {
-        var square = board.getSquareAtEvent(evt.touches[0]);
-        onMouseenterSquare({ square: square });
-    });
-
-    document.getElementById('board').addEventListener('touchend', function(evt) {
-        // Clear the tmp arrow on touch end
-        onMouseleaveSquare({ square: null });
-    });
+    
 
 });
