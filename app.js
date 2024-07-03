@@ -11,8 +11,8 @@ $(document).ready(function() {
         onDragStart: onDragStart, // Add onDragStart handler
         onDrop: onDrop,
         //onMousedownSquare,
-        onMouseenterSquare,
-        onMouseleaveSquare
+        //onMouseenterSquare,
+        //onMouseleaveSquare
     });
 
     // Handle window resize to make the board responsive
