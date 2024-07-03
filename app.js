@@ -11,8 +11,8 @@ $(document).ready(function() {
         onDragStart: onDragStart, // Add onDragStart handler
         onDrop: onDrop,
         //onMousedownSquare,
-        //onMouseenterSquare,
-       // onMouseleaveSquare
+        onMouseenterSquare,
+        onMouseleaveSquare
     });
 
     // Handle window resize to make the board responsive
@@ -147,6 +147,7 @@ $(document).ready(function() {
             playerTurn = true;
             return 'snapback';
         } else {
+            onMousedownSquare (source)
             var moveEndTime = Date.now();
             var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
             moveTimes[move.san] = moveTime;
@@ -226,6 +227,9 @@ $(document).ready(function() {
                 title: 'Please Click Play Button To Start',
             });
             return false; // Prevent piece from being dragged
+        }else{
+            console.log(source)
+            onMousedownSquare (source)
         }
     }
 
@@ -327,41 +331,12 @@ $(document).ready(function() {
 
     /////////////////////////////////////////////////////
 
-    function onMousedownSquare (evt, domEvt) {
+    function onMousedownSquare (evt) {
         // clear any circles that may be on the board
         board.clearCircles();
-        console.log("onMousedownSquare", evt, domEvt);
-        console.log("start square", startingSquare);
-        console.log("end square", evt.square);
+        
 
-        // Validate move
-        var move = game.move({
-            from: startingSquare,
-            to: evt.square,
-            promotion: 'q' // promote to queen for simplicity
-        });
-       
-        if (move === null && startingSquare !== null) {
-            // Illegal move
-            console.log("Illegal move");
-            playerTurn = true;
-            return 'snapback';
-        } else if (move !== null && startingSquare !== null) {
-            var moveEndTime = Date.now();
-            var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
-            moveTimes[move.san] = moveTime;
-            playerTurn = false;
-            history.push(move.san);
-
-            getEvaluationFromAPI(function(evaluation) {
-                evaluations[move.san] = evaluation;
-                console.log("Player move evaluation:", evaluations);
-                updateEvaluationsList();
-                if (!playerTurn) {
-                    setTimeout(makeAIMove, 250);
-                }
-            });
-        }
+        
         
         // Do we have a pending arrow?
         if (startingSquare) {
