@@ -12,12 +12,12 @@ $(document).ready(function() {
         draggable: true, // Allow dragging
         onDragStart: onDragStart, // Add onDragStart handler
         onMousedownSquare,
-        onMouseenterSquare
-        
+        onMouseenterSquare,
+        onMouseleaveSquare
     });
 
-     // Handle window resize to make the board responsive
-     window.addEventListener('resize', function() {
+    // Handle window resize to make the board responsive
+    window.addEventListener('resize', function() {
         resizeBoard();
     });
 
@@ -94,8 +94,6 @@ $(document).ready(function() {
             setTimeout(updateEvaluationsList, 250);
         }
     });
-
-   
 
     $('#togglePlayButton').on('click', function() {
         if (isPlaying) {
@@ -296,105 +294,123 @@ $(document).ready(function() {
         }
     }
 
-
-    
-
-    
-    /////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
 
     function onMousedownSquare (evt, domEvt) {
-    // clear any circles that may be on the board
-    board.clearCircles()
-    console.log("onMousedownSquare",evt,domEvt)
-    console.log("start squ",startingSquare)
-    console.log("end squ",evt.square)
-    // Validate move
-    var move = game.move({
-        from: startingSquare,
-        to: evt.square,
-        promotion: 'q' // promote to queen for simplicity
-    });
-   
-    if (move === null && startingSquare!== null) {
-        // Illegal move
-        console.log("Illegal move");
-        playerTurn = true;
-        return 'snapback';
-    } else if(move !== null && startingSquare!== null) {
-        var moveEndTime = Date.now();
-        var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
-        moveTimes[move.san] = moveTime;
-        playerTurn = false;
-        history.push(move.san);
+        // clear any circles that may be on the board
+        board.clearCircles();
+        console.log("onMousedownSquare", evt, domEvt);
+        console.log("start square", startingSquare);
+        console.log("end square", evt.square);
 
-        getEvaluationFromAPI(function(evaluation) {
-            evaluations[move.san] = evaluation;
-            console.log("Player move evaluation:", evaluations);
-            updateEvaluationsList();
-            if (!playerTurn) {
-                setTimeout(makeAIMove, 250);
-            }
+        // Validate move
+        var move = game.move({
+            from: startingSquare,
+            to: evt.square,
+            promotion: 'q' // promote to queen for simplicity
         });
-    }
-    
-    // do we have a pending arrow?
-    if (startingSquare) {
+       
+        if (move === null && startingSquare !== null) {
+            // Illegal move
+            console.log("Illegal move");
+            playerTurn = true;
+            return 'snapback';
+        } else if (move !== null && startingSquare !== null) {
+            var moveEndTime = Date.now();
+            var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
+            moveTimes[move.san] = moveTime;
+            playerTurn = false;
+            history.push(move.san);
+
+            getEvaluationFromAPI(function(evaluation) {
+                evaluations[move.san] = evaluation;
+                console.log("Player move evaluation:", evaluations);
+                updateEvaluationsList();
+                if (!playerTurn) {
+                    setTimeout(makeAIMove, 250);
+                }
+            });
+        }
         
+        // Do we have a pending arrow?
+        if (startingSquare) {
+            // Clear the pending and tmp arrows
+            startingSquare = null;
+            board.removeArrow(tmpArrowId);
+            tmpArrowId = null;
+        } else {
+            // Store the pending arrow info
+            startingSquare = evt.square;
+            console.log("selected square", evt.square);
+            const moves = game.moves({ square: evt.square });
+            console.log("selected moves", moves);
+            
+            // Exit if there are no moves available for this square
+            if (moves.length === 0) {
+                startingSquare = null;
+                board.removeArrow(tmpArrowId);
+                tmpArrowId = null;
+            } else {
+                // Highlight the possible squares for this piece
+                for (let i = 0; i < moves.length; i++) {
+                    // Get the last two characters of the move string
+                    const lastTwoCharacters = moves[i].slice(-2);
 
-        // clear the pending and tmp arrows
-        startingSquare = null
-        board.removeArrow(tmpArrowId)
-        tmpArrowId = null
-    } else {
-        // store the pending arrow info
-        startingSquare = evt.square
-        console.log("selected squire",evt.square)
-        const moves = game.moves({ square: evt.square })
-        console.log("selected moves",moves)
-          // exit if there are no moves available for this square
-          if (moves.length === 0){
-            startingSquare = null
-            board.removeArrow(tmpArrowId)
-            tmpArrowId = null
+                    // Assuming board.addCircle expects the position in the format "e4" etc.
+                    board.addCircle(lastTwoCharacters);
+                }
 
-          }else{
-        
-          // highlight the possible squares for this piece
-          for (let i = 0; i < moves.length; i++) {
-            // Get the last two characters of the move string
-            const lastTwoCharacters = moves[i].slice(-2);
-
-            // Assuming board.addCircle expects the position in the format "e4" etc.
-            board.addCircle(lastTwoCharacters);
-          }
-
-          // put a circle on the starting square
-          board.addCircle(evt.square)
-          }
-    }
+                // Put a circle on the starting square
+                board.addCircle(evt.square);
+            }
+        }
     }
 
     function onMouseenterSquare (evt, domEvt) {
-      
-    // do nothing if we are not pending an Arrow
-    if (!startingSquare) return
+        // Do nothing if we are not pending an arrow
+        if (!startingSquare) return;
 
-    // remove the existing tmp arrow if necessary
-    if (tmpArrowId) {
-        board.removeArrow(tmpArrowId)
+        // Remove the existing tmp arrow if necessary
+        if (tmpArrowId) {
+            board.removeArrow(tmpArrowId);
+        }
+
+        // Add a tmp arrow to the board
+        tmpArrowId = board.addArrow({
+            start: startingSquare,
+            end: evt.square
+        });
     }
 
-    // add a tmp arrow to the board
-    tmpArrowId = board.addArrow({
-        start: startingSquare,
-        end: evt.square
-    })
+    function onMouseleaveSquare (evt, domEvt) {
+        // Remove the tmp arrow if it exists
+        if (tmpArrowId) {
+            board.removeArrow(tmpArrowId);
+            tmpArrowId = null;
+        }
     }
 
     function onSnapEnd () {
-    board.position(game.fen())
+        board.position(game.fen());
     }
 
+    /////////////////////////////////////////////////////
 
+    // Event listeners for touch events
+
+    document.getElementById('board').addEventListener('touchstart', function(evt) {
+        var square = board.getSquareAtEvent(evt.touches[0]);
+        onMousedownSquare({ square: square });
+    });
+
+    document.getElementById('board').addEventListener('touchmove', function(evt) {
+        var square = board.getSquareAtEvent(evt.touches[0]);
+        onMouseenterSquare({ square: square });
+    });
+
+    document.getElementById('board').addEventListener('touchend', function(evt) {
+        // Clear the tmp arrow on touch end
+        onMouseleaveSquare({ square: null });
+    });
 
 });
