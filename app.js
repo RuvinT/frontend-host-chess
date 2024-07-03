@@ -11,6 +11,7 @@ $(document).ready(function() {
         orientation: playerColor,
         draggable: true, // Allow dragging
         onDragStart: onDragStart, // Add onDragStart handler
+        onDrop: onDrop,
         onMousedownSquare,
         onMouseenterSquare,
         onMouseleaveSquare
@@ -130,6 +131,38 @@ $(document).ready(function() {
         if (playerColor === 'black') {
             playerTurn = false; // It's AI's turn
             setTimeout(makeAIMove, 250); // AI makes the first move
+        }
+    }
+    function onDrop(source, target, piece, newPos, oldPos, orientation) {
+
+        removeGreySquares()
+        // Validate move
+        var move = game.move({
+            from: source.source,
+            to: source.target,
+            promotion: 'q' // promote to queen for simplicity
+        });
+       
+        if (move === null) {
+            // Illegal move
+            console.log("Illegal move");
+            playerTurn = true;
+            return 'snapback';
+        } else {
+            var moveEndTime = Date.now();
+            var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
+            moveTimes[move.san] = moveTime;
+            playerTurn = false;
+            history.push(move.san);
+
+            getEvaluationFromAPI(function(evaluation) {
+                evaluations[move.san] = evaluation;
+                console.log("Player move evaluation:", evaluations);
+                updateEvaluationsList();
+                if (!playerTurn) {
+                    setTimeout(makeAIMove, 250);
+                }
+            });
         }
     }
 
