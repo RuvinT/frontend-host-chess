@@ -2,21 +2,21 @@ $(document).ready(function() {
     var playerColor = 'white'; // Player plays white by default
     var gameStarted = false; // Flag to track if the game has started
 
+    const whiteSquareGrey = '#a9a9a9'
+    const blackSquareGrey = '#696969'
 
     var board = Chessboard2('board', {
         pieceTheme: 'img/chesspieces/alpha/{piece}.png',
         position: 'start',
         orientation: playerColor,
-        draggable: true, // Allow dragging
+        draggable: false, // Allow dragging
         onDragStart: onDragStart, // Add onDragStart handler
-        onDrop: onDrop,
-        //onMousedownSquare,
-        //onMouseenterSquare,
-        //onMouseleaveSquare
+        onMousedownSquare,
+        //onMouseenterSquare
     });
 
-    // Handle window resize to make the board responsive
-    window.addEventListener('resize', function() {
+     // Handle window resize to make the board responsive
+     window.addEventListener('resize', function() {
         resizeBoard();
     });
 
@@ -31,8 +31,8 @@ $(document).ready(function() {
 
     resizeBoard(); // Initial resize to set the board size correctly
 
-    let startingSquare = null
-    let tmpArrowId = null
+    let startingSquare = null;
+    let tmpArrowId = null;
     var game = new Chess();
     var playerTurn = true; // Flag to track player's turn
     var evaluations = {}; // Object to store evaluations for each move
@@ -55,6 +55,7 @@ $(document).ready(function() {
     $("#topPlayerName").text("Magnus Carlsen");
     $("#bottomPlayerImage").attr("src", "./img/player.png");
     $("#bottomPlayerName").text("Player");
+
     function updatePlayerDetails() {
         var selectedPlayer = $("#grandmaster").val();
         var playerImage = players[selectedPlayer];
@@ -97,7 +98,7 @@ $(document).ready(function() {
     $('#togglePlayButton').on('click', function() {
         if (isPlaying) {
             // Rematch logic here
-            resetGame()
+            resetGame();
             $(this).text('Play');
         } else {
             // Play logic here
@@ -129,39 +130,6 @@ $(document).ready(function() {
         if (playerColor === 'black') {
             playerTurn = false; // It's AI's turn
             setTimeout(makeAIMove, 250); // AI makes the first move
-        }
-    }
-    function onDrop(source, target, piece, newPos, oldPos, orientation) {
-
-      
-        // Validate move
-        var move = game.move({
-            from: source.source,
-            to: source.target,
-            promotion: 'q' // promote to queen for simplicity
-        });
-       
-        if (move === null) {
-            // Illegal move
-            console.log("Illegal move");
-            playerTurn = true;
-            return 'snapback';
-        } else {
-            onMousedownSquare (source)
-            var moveEndTime = Date.now();
-            var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
-            moveTimes[move.san] = moveTime;
-            playerTurn = false;
-            history.push(move.san);
-
-            getEvaluationFromAPI(function(evaluation) {
-                evaluations[move.san] = evaluation;
-                console.log("Player move evaluation:", evaluations);
-                updateEvaluationsList();
-                if (!playerTurn) {
-                    setTimeout(makeAIMove, 250);
-                }
-            });
         }
     }
 
@@ -227,19 +195,14 @@ $(document).ready(function() {
                 title: 'Please Click Play Button To Start',
             });
             return false; // Prevent piece from being dragged
-        }else{
-            console.log(source)
-            onMousedownSquare (source)
         }
     }
-
 
     function makeAIMove() {
         var moveStartTime = Date.now();
 
         $.ajax({
-            //http://127.0.0.1:5000
-            url: 'https://chess-master.azurewebsites.net/get_move',
+            url: 'https://dolphin-app-evjrt.ondigitalocean.app/get_move',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
@@ -292,7 +255,7 @@ $(document).ready(function() {
         console.log("Making evaluation ...");
         console.log("Current board FEN:", board.fen());
         $.ajax({
-            url: 'https://chess-master.azurewebsites.net/get_evaluation',
+            url: 'https://dolphin-app-evjrt.ondigitalocean.app/get_evaluation',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
@@ -329,78 +292,122 @@ $(document).ready(function() {
         }
     }
 
-    /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////
 
-    function onMousedownSquare (evt) {
+    function onMousedownSquare (evt, domEvt) {
         // clear any circles that may be on the board
-        board.clearCircles();
-        
+        board.clearCircles()
+        console.log("onMousedownSquare",evt,domEvt)
+        console.log("start squ",startingSquare)
+        console.log("end squ",evt.square)
+        // Validate move
+        var move = game.move({
+            from: startingSquare,
+            to: evt.square,
+            promotion: 'q' // promote to queen for simplicity
+        });
+    
+        if (move === null && startingSquare!== null) {
+            // Illegal move
+            console.log("Illegal move");
+            playerTurn = true;
+            return 'snapback';
+        } else if(move !== null && startingSquare!== null) {
+            var moveEndTime = Date.now();
+            var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
+            moveTimes[move.san] = moveTime;
+            playerTurn = false;
+            history.push(move.san);
 
-        
-        
-        // Do we have a pending arrow?
+            getEvaluationFromAPI(function(evaluation) {
+                evaluations[move.san] = evaluation;
+                console.log("Player move evaluation:", evaluations);
+                updateEvaluationsList();
+                if (!playerTurn) {
+                    setTimeout(makeAIMove, 250);
+                }
+            });
+        }
+    
+        // do we have a pending arrow?
         if (startingSquare) {
-            // Clear the pending and tmp arrows
-            startingSquare = null;
-            board.removeArrow(tmpArrowId);
-            tmpArrowId = null;
+            // clear the pending and tmp arrows
+            startingSquare = null
+            //board.removeArrow(tmpArrowId)
+            tmpArrowId = null
         } else {
-            // Store the pending arrow info
-            startingSquare = evt.square;
-            console.log("selected square", evt.square);
-            const moves = game.moves({ square: evt.square });
-            console.log("selected moves", moves);
-            
-            // Exit if there are no moves available for this square
-            if (moves.length === 0) {
-                startingSquare = null;
-                board.removeArrow(tmpArrowId);
-                tmpArrowId = null;
-            } else {
-                // Highlight the possible squares for this piece
+            // store the pending arrow info
+            startingSquare = evt.square
+            console.log("selected squire",evt.square)
+            const moves = game.moves({ square: evt.square })
+            console.log("selected moves",moves)
+            // exit if there are no moves available for this square
+            if (moves.length === 0){
+                startingSquare = null
+                //board.removeArrow(tmpArrowId)
+                tmpArrowId = null
+            }else{
+                // highlight the possible squares for this piece
                 for (let i = 0; i < moves.length; i++) {
                     // Get the last two characters of the move string
                     const lastTwoCharacters = moves[i].slice(-2);
-
                     // Assuming board.addCircle expects the position in the format "e4" etc.
                     board.addCircle(lastTwoCharacters);
                 }
-
-                // Put a circle on the starting square
-                board.addCircle(evt.square);
+                // put a circle on the starting square
+                board.addCircle(evt.square)
             }
         }
     }
-
+    /*
     function onMouseenterSquare (evt, domEvt) {
-        // Do nothing if we are not pending an arrow
-        if (!startingSquare) return;
-
-        // Remove the existing tmp arrow if necessary
+        // do nothing if we are not pending an Arrow
+        if (!startingSquare) return
+        // remove the existing tmp arrow if necessary
         if (tmpArrowId) {
-            board.removeArrow(tmpArrowId);
+            board.removeArrow(tmpArrowId)
         }
-
-        // Add a tmp arrow to the board
+        // add a tmp arrow to the board
         tmpArrowId = board.addArrow({
             start: startingSquare,
             end: evt.square
-        });
+        })
+    }
+*/
+$('#board').on('touchstart', { passive: true }, function(e) {
+    var touch = e.originalEvent.touches[0];
+    var square = getSquareFromTouch(touch.pageX, touch.pageY);
+    if (square) {
+        onMousedownSquare({ square: square }, e);
+    }
+});
+
+
+
+
+
+
+
+function getSquareFromTouch(x, y) {
+    var boardElement = $('#board');
+    var boardOffset = boardElement.offset();
+    var boardSize = boardElement.width(); // Assumes square board
+    var squareSize = boardSize / 8;
+
+    var relativeX = x - boardOffset.left;
+    var relativeY = y - boardOffset.top;
+
+    if (relativeX < 0 || relativeX > boardSize || relativeY < 0 || relativeY > boardSize) {
+        return null; // Outside of the board
     }
 
-    function onMouseleaveSquare (evt, domEvt) {
-        // Remove the tmp arrow if it exists
-        if (tmpArrowId) {
-            board.removeArrow(tmpArrowId);
-            tmpArrowId = null;
-        }
-    }
+    var file = Math.floor(relativeX / squareSize);
+    var rank = 7 - Math.floor(relativeY / squareSize); // Reverse y-coordinate for ranks
 
-    function onSnapEnd () {
-        board.position(game.fen());
-    }
+    var files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    return files[file] + (rank + 1);
+}
 
 
     
-
 });
