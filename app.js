@@ -1,22 +1,20 @@
-$(document).ready(function() {
+$(document).ready(function () {
     var playerColor = 'white'; // Player plays white by default
     var gameStarted = false; // Flag to track if the game has started
 
-    const whiteSquareGrey = '#a9a9a9'
-    const blackSquareGrey = '#696969'
 
     var board = Chessboard2('board', {
-        pieceTheme: 'img/chesspieces/alpha/{piece}.png',
+        pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
         position: 'start',
+        moveSpeed: 200,
         orientation: playerColor,
         draggable: false, // Allow dragging
-        onDragStart: onDragStart, // Add onDragStart handler
         onMousedownSquare,
         //onMouseenterSquare
     });
 
-     // Handle window resize to make the board responsive
-     window.addEventListener('resize', function() {
+    // Handle window resize to make the board responsive
+    window.addEventListener('resize', function () {
         resizeBoard();
     });
 
@@ -32,7 +30,6 @@ $(document).ready(function() {
     resizeBoard(); // Initial resize to set the board size correctly
 
     let startingSquare = null;
-    let tmpArrowId = null;
     var game = new Chess();
     var playerTurn = true; // Flag to track player's turn
     var evaluations = {}; // Object to store evaluations for each move
@@ -51,6 +48,11 @@ $(document).ready(function() {
         "Hikaru Nakamura": "https://example.com/nakamura.jpg"
     };
 
+    var capturedPieces = {
+        white: [],
+        black: []
+    };
+
     $("#topPlayerImage").attr("src", "./img/magnus.png");
     $("#topPlayerName").text("Magnus Carlsen");
     $("#bottomPlayerImage").attr("src", "./img/player.png");
@@ -63,39 +65,70 @@ $(document).ready(function() {
         $("#topPlayerName").text(selectedPlayer);
     }
 
-    $("#grandmaster").change(function() {
+    $("#grandmaster").change(function () {
         updatePlayerDetails();
     });
 
-    $('#revertMoveButton').on('click', function() {
+    $('#revertMoveButton').on('click', function () {
         if (history.length > 0) {
             delete evaluations[game.undo().san];
             delete evaluations[game.undo().san];
             board.position(game.fen());
             playerTurn = true;
             updateEvaluationsList();
+            capturedPieces = {
+                white: [],
+                black: []
+            };
+            getCapturedPieces(game.fen(),capturedPieces);
+            updateCapturedPieces()
         }
     });
 
-    $('#moveForwardButton').on('click', function() {
+    $('#flipButton').on('click', function () {
+        if(playerColor === 'white'){
+            playerColor = 'black'
+
+        }else{
+            playerColor = 'white'
+        }
+        board.orientation(playerColor);
+        updateCapturedPieces()
+        if (playerColor === 'black') {
+            playerTurn = false; // It's AI's turn
+            setTimeout(makeAIMove, 250); // AI makes the first move
+        }
+
+        
+    });
+
+    $('#moveForwardButton').on('click', function () {
         if (history.length > game.history().length) {
-            var nextMove1 = history[history.length - 2];
-            var nextMove2 = history[history.length - 1];
+            var nextMove1 = history[game.history().length];
+            var nextMove2 = history[game.history().length+1];
+            
             game.move(nextMove1);
             game.move(nextMove2);
-
+            
             board.position(game.fen());
-            getEvaluationFromAPI(function(evaluation) {
-                evaluations[nextMove2] = evaluation;
-            });
-            getEvaluationFromAPI(function(evaluation) {
+            getEvaluationFromAPI(function (evaluation) {
                 evaluations[nextMove1] = evaluation;
             });
-            setTimeout(updateEvaluationsList, 250);
+            getEvaluationFromAPI(function (evaluation) {
+                evaluations[nextMove2] = evaluation;
+            });
+            updateCapturedPieces()
+            capturedPieces = {
+                white: [],
+                black: []
+            };
+            getCapturedPieces(game.fen(),capturedPieces);
+            
+            setTimeout(updateEvaluationsList, 500);
         }
     });
 
-    $('#togglePlayButton').on('click', function() {
+    $('#togglePlayButton').on('click', function () {
         if (isPlaying) {
             // Rematch logic here
             resetGame();
@@ -107,6 +140,30 @@ $(document).ready(function() {
         }
         isPlaying = !isPlaying;
     });
+   
+
+    function updateCapturedPieces() {
+        $('#capturedPiecesTop').empty();
+        $('#capturedPiecesBottom').empty();
+        if(playerColor === 'white'){
+        capturedPieces.white.forEach(function (piece) {
+            $('#capturedPiecesTop').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
+        });
+
+        capturedPieces.black.forEach(function (piece) {
+            $('#capturedPiecesBottom').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
+        });
+    }else{
+        capturedPieces.white.forEach(function (piece) {
+            $('#capturedPiecesBottom').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
+        });
+
+        capturedPieces.black.forEach(function (piece) {
+            $('#capturedPiecesTop').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
+        });
+
+    }
+    }
 
     function startGame() {
         gameStarted = true; // Mark game as started
@@ -123,14 +180,19 @@ $(document).ready(function() {
         updateTimers();
         aiMoveEndTime = Date.now();
         board.start(); // Start the chessboard
-        if(gameType !== 'classical'){
+        if (gameType !== 'classical') {
             startTimer(); // Start the timer
         }
-        
+
         if (playerColor === 'black') {
             playerTurn = false; // It's AI's turn
             setTimeout(makeAIMove, 250); // AI makes the first move
         }
+        capturedPieces = {
+            white: [],
+            black: []
+        };
+        updateCapturedPieces()
     }
 
     function resetGame() {
@@ -149,10 +211,10 @@ $(document).ready(function() {
     function startTimer() {
         clearInterval(timerInterval); // Clear any existing timer
 
-        timerInterval = setInterval(function() {
+        timerInterval = setInterval(function () {
             if (playerTurn) {
                 playerTime--;
-                if (playerTime < 0 ) {
+                if (playerTime < 0) {
                     clearInterval(timerInterval);
                     Swal.fire({
                         icon: 'error',
@@ -162,7 +224,7 @@ $(document).ready(function() {
                 }
             } else {
                 aiTime--;
-                if (aiTime < 0 ) {
+                if (aiTime < 0) {
                     clearInterval(timerInterval);
                     Swal.fire({
                         icon: 'error',
@@ -188,15 +250,6 @@ $(document).ready(function() {
         return (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
     }
 
-    function onDragStart(source, piece, position, orientation) {
-        if (!gameStarted) {
-            Swal.fire({
-                icon: 'info',
-                title: 'Please Click Play Button To Start',
-            });
-            return false; // Prevent piece from being dragged
-        }
-    }
 
     function makeAIMove() {
         var moveStartTime = Date.now();
@@ -207,12 +260,11 @@ $(document).ready(function() {
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
-            success: function(response) {
-                console.log("Received response from API:", response);
+            success: function (response) {
+                
 
                 var move = response.move;
-                console.log("Move received from API:", move);
-
+                
                 var aiMove = game.move({
                     from: move.slice(0, 2),
                     to: move.slice(2, 4),
@@ -225,23 +277,35 @@ $(document).ready(function() {
 
                 board.position(game.fen());
                 history.push(aiMove.san);
+                // Track captured pieces
+                if (aiMove.captured) {
+                    if (aiMove.color === 'w') {
 
-                getEvaluationFromAPI(function(evaluation) {
+                        capturedPieces.black.push(('b' + aiMove.captured.toUpperCase()));
+                    } else {
+                        capturedPieces.white.push(('w' + aiMove.captured.toUpperCase()));
+                    }
+                    updateCapturedPieces();
+                }
+                getEvaluationFromAPI(function (evaluation) {
                     evaluations[aiMove.san] = evaluation;
-                    console.log("AI move evaluation:", evaluations);
+                    
                     updateEvaluationsList();
                     playerTurn = true;
-                    if (game.game_over()) {
-                        setTimeout(function() {
-                            Swal.fire({
-                                icon: 'info',
-                                title: 'Game over checkmate!'
-                            });
-                        }, 1000);
-                    }
+
                 });
+                if (game.game_over()) {
+
+                    setTimeout(function () {
+
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Game over checkmate!'
+                        });
+                    }, 1000);
+                }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 console.log("Error getting AI move:", textStatus, errorThrown);
                 Swal.fire({
                     icon: 'error',
@@ -253,19 +317,18 @@ $(document).ready(function() {
     }
 
     function getEvaluationFromAPI(callback) {
-        console.log("Making evaluation ...");
-        console.log("Current board FEN:", board.fen());
+       
         $.ajax({
             url: 'https://dolphin-app-evjrt.ondigitalocean.app/get_evaluation',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
-            success: function(response) {
-                console.log("Received response from API:", response);
+            success: function (response) {
+                
                 var evaluation = response.evaluation;
                 callback(evaluation);
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 console.log("Error getting evaluation:", textStatus, errorThrown);
                 Swal.fire({
                     icon: 'error',
@@ -293,70 +356,152 @@ $(document).ready(function() {
         }
     }
 
-    /////////////////////////////////////////////////////////
-
-    function onMousedownSquare (evt, domEvt) {
-        // clear any circles that may be on the board
-        board.clearCircles()
-        console.log("onMousedownSquare",evt,domEvt)
-        console.log("start squ",startingSquare)
-        console.log("end squ",evt.square)
-        // Validate move
-        var move = game.move({
-            from: startingSquare,
-            to: evt.square,
-            promotion: 'q' // promote to queen for simplicity
-        });
+    function getCapturedPieces(currentFEN,capturedPieces) {
+        const initialPosition = new Chess();
+        const currentPosition = new Chess(currentFEN);
     
-        if (move === null && startingSquare!== null) {
-            // Illegal move
-            console.log("Illegal move");
-            playerTurn = true;
-            return 'snapback';
-        } else if(move !== null && startingSquare!== null) {
-            var moveEndTime = Date.now();
-            var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
-            moveTimes[move.san] = moveTime;
-            playerTurn = false;
-            history.push(move.san);
-
-            getEvaluationFromAPI(function(evaluation) {
-                evaluations[move.san] = evaluation;
-                console.log("Player move evaluation:", evaluations);
-                updateEvaluationsList();
-                if (!playerTurn) {
-                    setTimeout(makeAIMove, 250);
+        const initialPieces = getPieceCounts(initialPosition);
+        const currentPieces = getPieceCounts(currentPosition);
+    
+        // Define piece names for easier mapping
+        const pieceNames = {
+            p: 'p',
+            n: 'n',
+            b: 'b',
+            r: 'r',
+            q: 'q',
+            k: 'k'
+        };
+    
+        // Determine captured pieces by comparing counts
+        for (let piece in initialPieces) {
+            const initialCount = initialPieces[piece] || 0;
+            const currentCount = currentPieces[piece] || 0;
+            const capturedCount = initialCount - currentCount;
+    
+            if (capturedCount > 0) {
+                const color = piece === piece.toUpperCase() ? 'white' : 'black';
+                const pieceType = pieceNames[piece.toLowerCase()];
+    
+                for (let i = 0; i < capturedCount; i++) {
+                    if (color === 'white') {
+                        capturedPieces.white.push('w' + pieceType.toUpperCase());
+                    } else {
+                        capturedPieces.black.push('b' + pieceType.toUpperCase());
+                    }
                 }
-            });
+            }
         }
     
-        // do we have a pending arrow?
-        if (startingSquare) {
-            // clear the pending and tmp arrows
-            startingSquare = null
-            //board.removeArrow(tmpArrowId)
-            tmpArrowId = null
+        return capturedPieces;
+    }
+    
+    function getPieceCounts(chessInstance) {
+        const board = chessInstance.board();
+        const pieceCounts = {};
+    
+        for (let row of board) {
+            for (let square of row) {
+                if (square) {
+                    const piece = square.color === 'w' ? square.type.toUpperCase() : square.type;
+                    if (!pieceCounts[piece]) pieceCounts[piece] = 0;
+                    pieceCounts[piece]++;
+                }
+            }
+        }
+    
+        return pieceCounts;
+    }
+
+    /////////////////////////////////////////////////////////
+
+    function onMousedownSquare(evt, domEvt) {
+        if (!gameStarted) {
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Please Click Play Button To Start',
+            });
+            return false; // Prevent piece from being dragged
         } else {
-            // store the pending arrow info
-            startingSquare = evt.square
-            console.log("selected squire",evt.square)
-            const moves = game.moves({ square: evt.square })
-            console.log("selected moves",moves)
-            // exit if there are no moves available for this square
-            if (moves.length === 0){
+            
+            // Validate move
+            var move = game.move({
+                from: startingSquare,
+                to: evt.square,
+                promotion: 'q' // promote to queen for simplicity
+            });
+            board.clearCircles()
+            if (move === null && startingSquare !== null) {
+                // Illegal move
+                console.log("Illegal move");
+                playerTurn = true;
+                startingSquare = null;
+                
+            } else if (move !== null && startingSquare !== null) {
+                // clear any circles that may be on the board
+                
+                var moveEndTime = Date.now();
+                var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
+                moveTimes[move.san] = moveTime;
+                playerTurn = false;
+                history.push(move.san);
+
+                // Track captured pieces
+                if (move.captured) {
+                    if (move.color === 'w') {
+
+                        capturedPieces.black.push(('b' + move.captured.toUpperCase()));
+                    } else {
+                        capturedPieces.white.push(('w' + move.captured.toUpperCase()));
+                    }
+                    updateCapturedPieces();
+                }
+                if (game.game_over()) {
+                    setTimeout(function () {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Game over checkmate!'
+                        });
+                    }, 1000);
+                }
+                getEvaluationFromAPI(function (evaluation) {
+                    evaluations[move.san] = evaluation;
+                    
+                    updateEvaluationsList();
+                    if (!playerTurn) {
+                        setTimeout(makeAIMove, 250);
+                    }
+                });
+            }
+
+            // do we have a pending arrow?
+            if (startingSquare) {
+                // clear the pending and tmp arrows
                 startingSquare = null
                 //board.removeArrow(tmpArrowId)
-                tmpArrowId = null
-            }else{
-                // highlight the possible squares for this piece
-                for (let i = 0; i < moves.length; i++) {
-                    // Get the last two characters of the move string
-                    const lastTwoCharacters = moves[i].slice(-2);
-                    // Assuming board.addCircle expects the position in the format "e4" etc.
-                    board.addCircle(lastTwoCharacters);
+                
+            } else {
+                // store the pending arrow info
+                startingSquare = evt.square
+               
+                const moves = game.moves({ square: evt.square })
+                
+                // exit if there are no moves available for this square
+                if (moves.length === 0) {
+                    startingSquare = null
+                    
+                } else {
+                    // highlight the possible squares for this piece
+                    for (let i = 0; i < moves.length; i++) {
+                        // Get the last two characters of the move string
+                        const lastTwoCharacters = moves[i].slice(-2);
+                        // Assuming board.addCircle expects the position in the format "e4" etc.
+                        board.addCircle(lastTwoCharacters);
+                    }
+                    // put a circle on the starting square
+                    board.addCircle(evt.square)
                 }
-                // put a circle on the starting square
-                board.addCircle(evt.square)
             }
         }
     }
@@ -375,40 +520,40 @@ $(document).ready(function() {
         })
     }
 */
-$('#board').on('touchstart', { passive: true }, function(e) {
-    var touch = e.originalEvent.touches[0];
-    var square = getSquareFromTouch(touch.pageX, touch.pageY);
-    if (square) {
-        onMousedownSquare({ square: square }, e);
+    $('#board').on('touchstart', { passive: true }, function (e) {
+        var touch = e.originalEvent.touches[0];
+        var square = getSquareFromTouch(touch.pageX, touch.pageY);
+        if (square) {
+            onMousedownSquare({ square: square }, e);
+        }
+    });
+
+
+
+
+
+
+
+    function getSquareFromTouch(x, y) {
+        var boardElement = $('#board');
+        var boardOffset = boardElement.offset();
+        var boardSize = boardElement.width(); // Assumes square board
+        var squareSize = boardSize / 8;
+
+        var relativeX = x - boardOffset.left;
+        var relativeY = y - boardOffset.top;
+
+        if (relativeX < 0 || relativeX > boardSize || relativeY < 0 || relativeY > boardSize) {
+            return null; // Outside of the board
+        }
+
+        var file = Math.floor(relativeX / squareSize);
+        var rank = 7 - Math.floor(relativeY / squareSize); // Reverse y-coordinate for ranks
+
+        var files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        return files[file] + (rank + 1);
     }
-});
 
 
 
-
-
-
-
-function getSquareFromTouch(x, y) {
-    var boardElement = $('#board');
-    var boardOffset = boardElement.offset();
-    var boardSize = boardElement.width(); // Assumes square board
-    var squareSize = boardSize / 8;
-
-    var relativeX = x - boardOffset.left;
-    var relativeY = y - boardOffset.top;
-
-    if (relativeX < 0 || relativeX > boardSize || relativeY < 0 || relativeY > boardSize) {
-        return null; // Outside of the board
-    }
-
-    var file = Math.floor(relativeX / squareSize);
-    var rank = 7 - Math.floor(relativeY / squareSize); // Reverse y-coordinate for ranks
-
-    var files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    return files[file] + (rank + 1);
-}
-
-
-    
 });
