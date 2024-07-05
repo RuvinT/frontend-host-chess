@@ -203,7 +203,7 @@ $(document).ready(function() {
 
         $.ajax({
             //http://127.0.0.1:5000
-            url: 'https://chess-master.azurewebsites.net/get_move',
+            url: 'https://dolphin-app-evjrt.ondigitalocean.app/get_move',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
