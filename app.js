@@ -6,9 +6,10 @@ $(document).ready(function () {
     var board = Chessboard2('board', {
         pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
         position: 'start',
-        moveSpeed: 200,
+        moveSpeed: 50000,       // Slow down move animation speed (default is 200)
+
         orientation: playerColor,
-        draggable: false, // Allow dragging
+        draggable: true, // Allow dragging
         onMousedownSquare,
         //onMouseenterSquare
     });
@@ -42,10 +43,14 @@ $(document).ready(function () {
     let isPlaying = false;
     var players = {
         "Magnus Carlsen": "./img/magnus.png",
-        "Garry Kasparov": "https://example.com/kasparov.jpg",
-        "Bobby Fischer": "https://example.com/fischer.jpg",
-        "Vishy Anand": "https://example.com/anand.jpg",
-        "Hikaru Nakamura": "https://example.com/nakamura.jpg"
+        "Garry Kasparov": "./img/Garry Kasparov.png",
+        "Fabiano Caruana": "./img/Fabiano Caruana.png",
+        "Hikaru Nakamura": "./img/Hikaru Nakamura.png",
+        "Arjun Erigaisi": "./img/Arjun Erigaisi.png",
+        "Praggnanandhaa": "./img/Praggnanandhaa.png",
+        "Kateryna Lagno": "./img/Kateryna Lagno.png",
+        "Hou Yifan": "./img/Hou Yifan.png"
+
     };
 
     var capturedPieces = {
@@ -80,16 +85,16 @@ $(document).ready(function () {
                 white: [],
                 black: []
             };
-            getCapturedPieces(game.fen(),capturedPieces);
+            getCapturedPieces(game.fen(), capturedPieces);
             updateCapturedPieces()
         }
     });
 
     $('#flipButton').on('click', function () {
-        if(playerColor === 'white'){
+        if (playerColor === 'white') {
             playerColor = 'black'
 
-        }else{
+        } else {
             playerColor = 'white'
         }
         board.orientation(playerColor);
@@ -99,17 +104,17 @@ $(document).ready(function () {
             setTimeout(makeAIMove, 250); // AI makes the first move
         }
 
-        
+
     });
 
     $('#moveForwardButton').on('click', function () {
         if (history.length > game.history().length) {
             var nextMove1 = history[game.history().length];
-            var nextMove2 = history[game.history().length+1];
-            
+            var nextMove2 = history[game.history().length + 1];
+
             game.move(nextMove1);
             game.move(nextMove2);
-            
+
             board.position(game.fen());
             getEvaluationFromAPI(function (evaluation) {
                 evaluations[nextMove1] = evaluation;
@@ -122,8 +127,8 @@ $(document).ready(function () {
                 white: [],
                 black: []
             };
-            getCapturedPieces(game.fen(),capturedPieces);
-            
+            getCapturedPieces(game.fen(), capturedPieces);
+
             setTimeout(updateEvaluationsList, 500);
         }
     });
@@ -140,29 +145,29 @@ $(document).ready(function () {
         }
         isPlaying = !isPlaying;
     });
-   
+
 
     function updateCapturedPieces() {
         $('#capturedPiecesTop').empty();
         $('#capturedPiecesBottom').empty();
-        if(playerColor === 'white'){
-        capturedPieces.white.forEach(function (piece) {
-            $('#capturedPiecesTop').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
-        });
+        if (playerColor === 'white') {
+            capturedPieces.white.forEach(function (piece) {
+                $('#capturedPiecesTop').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
+            });
 
-        capturedPieces.black.forEach(function (piece) {
-            $('#capturedPiecesBottom').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
-        });
-    }else{
-        capturedPieces.white.forEach(function (piece) {
-            $('#capturedPiecesBottom').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
-        });
+            capturedPieces.black.forEach(function (piece) {
+                $('#capturedPiecesBottom').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
+            });
+        } else {
+            capturedPieces.white.forEach(function (piece) {
+                $('#capturedPiecesBottom').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
+            });
 
-        capturedPieces.black.forEach(function (piece) {
-            $('#capturedPiecesTop').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
-        });
+            capturedPieces.black.forEach(function (piece) {
+                $('#capturedPiecesTop').append('<img src="./chessboardjs-1.0.0/img/chesspieces/wikipedia/' + piece + '.png">');
+            });
 
-    }
+        }
     }
 
     function startGame() {
@@ -261,10 +266,10 @@ $(document).ready(function () {
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
             success: function (response) {
-                
+
 
                 var move = response.move;
-                
+
                 var aiMove = game.move({
                     from: move.slice(0, 2),
                     to: move.slice(2, 4),
@@ -289,7 +294,7 @@ $(document).ready(function () {
                 }
                 getEvaluationFromAPI(function (evaluation) {
                     evaluations[aiMove.san] = evaluation;
-                    
+
                     updateEvaluationsList();
                     playerTurn = true;
 
@@ -317,14 +322,14 @@ $(document).ready(function () {
     }
 
     function getEvaluationFromAPI(callback) {
-       
+
         $.ajax({
             url: 'https://dolphin-app-evjrt.ondigitalocean.app/get_evaluation',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ board: game.fen() }),
             success: function (response) {
-                
+
                 var evaluation = response.evaluation;
                 callback(evaluation);
             },
@@ -356,13 +361,13 @@ $(document).ready(function () {
         }
     }
 
-    function getCapturedPieces(currentFEN,capturedPieces) {
+    function getCapturedPieces(currentFEN, capturedPieces) {
         const initialPosition = new Chess();
         const currentPosition = new Chess(currentFEN);
-    
+
         const initialPieces = getPieceCounts(initialPosition);
         const currentPieces = getPieceCounts(currentPosition);
-    
+
         // Define piece names for easier mapping
         const pieceNames = {
             p: 'p',
@@ -372,17 +377,17 @@ $(document).ready(function () {
             q: 'q',
             k: 'k'
         };
-    
+
         // Determine captured pieces by comparing counts
         for (let piece in initialPieces) {
             const initialCount = initialPieces[piece] || 0;
             const currentCount = currentPieces[piece] || 0;
             const capturedCount = initialCount - currentCount;
-    
+
             if (capturedCount > 0) {
                 const color = piece === piece.toUpperCase() ? 'white' : 'black';
                 const pieceType = pieceNames[piece.toLowerCase()];
-    
+
                 for (let i = 0; i < capturedCount; i++) {
                     if (color === 'white') {
                         capturedPieces.white.push('w' + pieceType.toUpperCase());
@@ -392,14 +397,14 @@ $(document).ready(function () {
                 }
             }
         }
-    
+
         return capturedPieces;
     }
-    
+
     function getPieceCounts(chessInstance) {
         const board = chessInstance.board();
         const pieceCounts = {};
-    
+
         for (let row of board) {
             for (let square of row) {
                 if (square) {
@@ -409,7 +414,7 @@ $(document).ready(function () {
                 }
             }
         }
-    
+
         return pieceCounts;
     }
 
@@ -417,93 +422,96 @@ $(document).ready(function () {
 
     function onMousedownSquare(evt, domEvt) {
         if (!gameStarted) {
+            startGame();
+            $('#togglePlayButton').text("Rematch")
+            isPlaying = true;
+        }
 
-            Swal.fire({
-                icon: 'info',
-                title: 'Please Click Play Button To Start',
-            });
-            return false; // Prevent piece from being dragged
-        } else {
-            
-            // Validate move
-            var move = game.move({
-                from: startingSquare,
-                to: evt.square,
-                promotion: 'q' // promote to queen for simplicity
-            });
-            board.clearCircles()
-            if (move === null && startingSquare !== null) {
-                // Illegal move
-                console.log("Illegal move");
-                playerTurn = true;
-                startingSquare = null;
-                
-            } else if (move !== null && startingSquare !== null) {
-                // clear any circles that may be on the board
-                
-                var moveEndTime = Date.now();
-                var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
-                moveTimes[move.san] = moveTime;
-                playerTurn = false;
-                history.push(move.san);
+        // Validate move
+        var move = game.move({
+            from: startingSquare,
+            to: evt.square,
+            promotion: 'q' // promote to queen for simplicity
+        });
+        board.clearCircles()
+        if (move === null && startingSquare !== null) {
+            // Illegal move
+            console.log("Illegal move");
+            playerTurn = true;
+            startingSquare = null;
 
-                // Track captured pieces
-                if (move.captured) {
-                    if (move.color === 'w') {
+        } else if (move !== null && startingSquare !== null) {
+            // clear any circles that may be on the board
 
-                        capturedPieces.black.push(('b' + move.captured.toUpperCase()));
-                    } else {
-                        capturedPieces.white.push(('w' + move.captured.toUpperCase()));
-                    }
-                    updateCapturedPieces();
-                }
-                if (game.game_over()) {
-                    setTimeout(function () {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Game over checkmate!'
-                        });
-                    }, 1000);
-                }
-                getEvaluationFromAPI(function (evaluation) {
-                    evaluations[move.san] = evaluation;
-                    
-                    updateEvaluationsList();
-                    if (!playerTurn) {
-                        setTimeout(makeAIMove, 250);
-                    }
-                });
+            var moveEndTime = Date.now();
+            var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
+            moveTimes[move.san] = moveTime;
+            playerTurn = false;
+            history.push(move.san);
+            board.position(game.fen());
+            if (!playerTurn) {
+                setTimeout(makeAIMove, 1000);
             }
 
-            // do we have a pending arrow?
-            if (startingSquare) {
-                // clear the pending and tmp arrows
-                startingSquare = null
-                //board.removeArrow(tmpArrowId)
-                
-            } else {
-                // store the pending arrow info
-                startingSquare = evt.square
-               
-                const moves = game.moves({ square: evt.square })
-                
-                // exit if there are no moves available for this square
-                if (moves.length === 0) {
-                    startingSquare = null
-                    
+            // Track captured pieces
+            if (move.captured) {
+                if (move.color === 'w') {
+
+                    capturedPieces.black.push(('b' + move.captured.toUpperCase()));
                 } else {
-                    // highlight the possible squares for this piece
-                    for (let i = 0; i < moves.length; i++) {
-                        // Get the last two characters of the move string
-                        const lastTwoCharacters = moves[i].slice(-2);
-                        // Assuming board.addCircle expects the position in the format "e4" etc.
-                        board.addCircle(lastTwoCharacters);
-                    }
-                    // put a circle on the starting square
-                    board.addCircle(evt.square)
+                    capturedPieces.white.push(('w' + move.captured.toUpperCase()));
                 }
+                updateCapturedPieces();
+            }
+            if (game.game_over()) {
+                setTimeout(function () {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Game over checkmate!'
+                    });
+                }, 1000);
+            }
+
+
+            getEvaluationFromAPI(function (evaluation) {
+                evaluations[move.san] = evaluation;
+
+                updateEvaluationsList();
+
+            });
+
+
+        }
+
+        // do we have a pending arrow?
+        if (startingSquare) {
+            // clear the pending and tmp arrows
+            startingSquare = null
+            //board.removeArrow(tmpArrowId)
+
+        } else {
+            // store the pending arrow info
+            startingSquare = evt.square
+
+            const moves = game.moves({ square: evt.square })
+
+            // exit if there are no moves available for this square
+            if (moves.length === 0) {
+                startingSquare = null
+
+            } else {
+                // highlight the possible squares for this piece
+                for (let i = 0; i < moves.length; i++) {
+                    // Get the last two characters of the move string
+                    const lastTwoCharacters = moves[i].slice(-2);
+                    // Assuming board.addCircle expects the position in the format "e4" etc.
+                    board.addCircle(lastTwoCharacters);
+                }
+                // put a circle on the starting square
+                board.addCircle(evt.square)
             }
         }
+
     }
     /*
     function onMouseenterSquare (evt, domEvt) {

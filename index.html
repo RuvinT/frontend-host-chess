@@ -191,14 +191,17 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            margin-left: 10px;
+            margin-right: 10px;
         }
 
-        .player-info span {
+        .player-info-span {
             font-size: 15px;
             font-weight: bold;
-            width:30%;
-            margin-left: 5px;
+            width:50%;
+            margin-right: 50px;
+            align-items: center;
+            margin-top: 5px;
+            
         }
 
         .captured-pieces {
@@ -220,7 +223,7 @@
             font-size: 24px;
             font-weight: bold;
             text-align: right;
-            margin: 10px 0;
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -232,7 +235,7 @@
                 <div id="boardContainer" class="d-flex flex-column align-items-center">
                     <div id="playerTop" class="player-info">
                         <img src="top-player-image.jpg" alt="Top Player Image" id="topPlayerImage">
-                        <span  id="topPlayerName">Magnus Carlsen</span>
+                        <div  id="topPlayerName" class="player-info-span">Magnus Carlsen</div>
                         <div id="topTimer" style="margin-left: 1px;">00:00</div>  
                     </div>
                     <div id="capturedPiecesTop" class="captured-pieces"></div>
@@ -240,7 +243,7 @@
                     <div id="capturedPiecesBottom" class="captured-pieces"></div>
                     <div id="playerBottom" class="player-info">
                         <img src="bottom-player-image.jpg" alt="Bottom Player Image" id="bottomPlayerImage">
-                        <span id="bottomPlayerName">Player</span>
+                        <div id="bottomPlayerName" class="player-info-span">Player</div>
                         <div id="bottomTimer" style="margin-left: 1px;">00:00</div>
                        
                     </div>
@@ -277,10 +280,14 @@
                     <h3>Choose Grandmaster</h3>
                     <select id="grandmaster">
                         <option value="Magnus Carlsen">Magnus Carlsen</option>
-                        <option value="Garry Kasparov">Garry Kasparov</option>
-                        <option value="Bobby Fischer">Bobby Fischer</option>
-                        <option value="Vishy Anand">Vishy Anand</option>
                         <option value="Hikaru Nakamura">Hikaru Nakamura</option>
+                        <option value="Garry Kasparov">Garry Kasparov</option>
+                        <option value="Fabiano Caruana">Fabiano Caruana</option>
+                        <option value="Arjun Erigaisi">Arjun Erigaisi</option>
+                        <option value="Praggnanandhaa">Praggnanandhaa</option>
+                        <option value="Kateryna Lagno">Kateryna Lagno</option>
+                        <option value="Hou Yifan">Hou Yifan</option>
+                                               
                     </select>
                 </div>
                 <div id="buttonContainer">
