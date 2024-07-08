@@ -9,7 +9,7 @@ $(document).ready(function () {
         moveSpeed: 50000,       // Slow down move animation speed (default is 200)
 
         orientation: playerColor,
-        draggable: true, // Allow dragging
+        draggable: false, // Allow dragging
         onMousedownSquare,
         //onMouseenterSquare
     });
