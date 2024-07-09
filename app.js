@@ -211,6 +211,18 @@ $(document).ready(function () {
         clearInterval(timerInterval);
         $('#bottomTimer').text('00:00');
         $('#topTimer').text('00:00');
+        // Reset radio buttons to default values
+        $('input[name="gameType"][value="classical"]').prop('checked', true); // Set default game type
+        $('input[name="color"][value="white"]').prop('checked', true); // Set default player color
+
+        // Update board orientation and player color based on default values
+        playerColor = 'white';
+        board.orientation(playerColor);
+        capturedPieces = {
+            white: [],
+            black: []
+        };
+        updateCapturedPieces();
     }
 
     function startTimer() {
@@ -556,11 +568,13 @@ $(document).ready(function () {
             file = Math.floor(relativeX / squareSize);
             rank = 7 - Math.floor(relativeY / squareSize); // Reverse y-coordinate for ranks
         } else {
+            console.log("black")
             file = 7 - Math.floor(relativeX / squareSize); // Reverse x-coordinate for files
             rank = Math.floor(relativeY / squareSize); // Use y-coordinate directly for ranks
         }
-    
+        
         var files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        alert("clicked value",(files[file] + (rank + 1)))
         return files[file] + (rank + 1);
     }
     
