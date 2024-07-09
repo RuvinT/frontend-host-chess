@@ -530,23 +530,12 @@ $(document).ready(function () {
 */
     $('#board').on('touchstart', { passive: true }, function (e) {
         var touch = e.originalEvent.touches[0];
-        var square = null;
-        if (playerColor === 'white') {
-            square = getSquareFromTouch(touch.pageX, touch.pageY);
-
-        } else {
-            square = getSquareFromTouch(touch.pageY, touch.pageX);
-        }
-
+        
+        var square = getSquareFromTouch(touch.pageX, touch.pageY);
         if (square) {
             onMousedownSquare({ square: square }, e);
         }
     });
-
-
-
-
-
 
 
     function getSquareFromTouch(x, y) {
@@ -554,20 +543,27 @@ $(document).ready(function () {
         var boardOffset = boardElement.offset();
         var boardSize = boardElement.width(); // Assumes square board
         var squareSize = boardSize / 8;
-
+    
         var relativeX = x - boardOffset.left;
         var relativeY = y - boardOffset.top;
-
+    
         if (relativeX < 0 || relativeX > boardSize || relativeY < 0 || relativeY > boardSize) {
             return null; // Outside of the board
         }
-
-        var file = Math.floor(relativeX / squareSize);
-        var rank = 7 - Math.floor(relativeY / squareSize); // Reverse y-coordinate for ranks
-
+    
+        var file, rank;
+        if (playerColor === 'white') {
+            file = Math.floor(relativeX / squareSize);
+            rank = 7 - Math.floor(relativeY / squareSize); // Reverse y-coordinate for ranks
+        } else {
+            file = 7 - Math.floor(relativeX / squareSize); // Reverse x-coordinate for files
+            rank = Math.floor(relativeY / squareSize); // Use y-coordinate directly for ranks
+        }
+    
         var files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         return files[file] + (rank + 1);
     }
+    
 
 
 
