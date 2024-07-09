@@ -530,7 +530,14 @@ $(document).ready(function () {
 */
     $('#board').on('touchstart', { passive: true }, function (e) {
         var touch = e.originalEvent.touches[0];
-        var square = getSquareFromTouch(touch.pageX, touch.pageY);
+        var square = null;
+        if (playerColor === 'white') {
+            square = getSquareFromTouch(touch.pageX, touch.pageY);
+
+        } else {
+            square = getSquareFromTouch(touch.pageY, touch.pageX);
+        }
+
         if (square) {
             onMousedownSquare({ square: square }, e);
         }
