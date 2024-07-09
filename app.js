@@ -568,13 +568,13 @@ $(document).ready(function () {
             file = Math.floor(relativeX / squareSize);
             rank = 7 - Math.floor(relativeY / squareSize); // Reverse y-coordinate for ranks
         } else {
-            console.log("black")
+            
             file = 7 - Math.floor(relativeX / squareSize); // Reverse x-coordinate for files
             rank = Math.floor(relativeY / squareSize); // Use y-coordinate directly for ranks
         }
         
         var files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-        alert("clicked value",(files[file] + (rank + 1)))
+        
         return files[file] + (rank + 1);
     }
     
