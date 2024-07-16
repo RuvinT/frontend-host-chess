@@ -1,7 +1,7 @@
 $(document).ready(function () {
     var playerColor = 'white'; // Player plays white by default
     var gameStarted = false; // Flag to track if the game has started
-
+    var aiMove = null;
 
     var board = Chessboard2('board', {
         pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
@@ -41,6 +41,8 @@ $(document).ready(function () {
     var moveTimes = {}; // Object to store move times
     var aiMoveEndTime;
     let isPlaying = false;
+    var moveNumber = 0;
+    var AiMoveTime = 1;
     var players = {
         "Magnus Carlsen": "./img/magnus.png",
         "Garry Kasparov": "./img/Garry Kasparov.png",
@@ -175,6 +177,7 @@ $(document).ready(function () {
         gameType = $('input[name="gameType"]:checked').val();
         playerColor = $('input[name="color"]:checked').val(); // Get selected player color
         board.orientation(playerColor); // Set board orientation based on player color
+        moveNumber =0;
         if (gameType === 'blitz') {
             playerTime = aiTime = 300; // 5 minutes for blitz
         } else if (gameType === 'rapid') {
@@ -269,7 +272,7 @@ $(document).ready(function () {
 
 
     function makeAIMove() {
-        var moveStartTime = Date.now();
+        
 
         $.ajax({
             //http://127.0.0.1:5000
@@ -282,18 +285,17 @@ $(document).ready(function () {
 
                 var move = response.move;
 
-                var aiMove = game.move({
+                 aiMove = game.move({
                     from: move.slice(0, 2),
                     to: move.slice(2, 4),
                     promotion: 'q'
                 });
 
-                aiMoveEndTime = Date.now();
-                var moveTime = (aiMoveEndTime - moveStartTime) / 1000; // Time taken in seconds
-                moveTimes[aiMove.san] = moveTime;
+                
 
                 board.position(game.fen());
                 history.push(aiMove.san);
+                moveTimes[aiMove.san] = AiMoveTime
                 // Track captured pieces
                 if (aiMove.captured) {
                     if (aiMove.color === 'w') {
@@ -309,8 +311,10 @@ $(document).ready(function () {
 
                     updateEvaluationsList();
                     playerTurn = true;
-
+                    
                 });
+                console.log("Time Ai move ends",Date.now())
+                aiMoveEndTime = Date.now()
                 if (game.game_over()) {
 
                     setTimeout(function () {
@@ -344,6 +348,31 @@ $(document).ready(function () {
 
                 var evaluation = response.evaluation;
                 callback(evaluation);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log("Error getting evaluation:", textStatus, errorThrown);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Error getting evaluation'
+                });
+            }
+        });
+    }
+
+    function getTimeFromAPI(callback) {
+
+        $.ajax({
+            url: 'https://dolphin-app-evjrt.ondigitalocean.app/get_time',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ game_format: gameType,
+                move_number: moveNumber
+             }),
+            success: function (response) {
+
+                var player_time = response.player_time;
+                callback(player_time);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log("Error getting evaluation:", textStatus, errorThrown);
@@ -454,17 +483,28 @@ $(document).ready(function () {
 
         } else if (move !== null && startingSquare !== null) {
             // clear any circles that may be on the board
-
+            moveNumber++;
             var moveEndTime = Date.now();
+            console.log("Time new move",Date.now())
             var moveTime = (moveEndTime - aiMoveEndTime) / 1000; // Time taken in seconds
             moveTimes[move.san] = moveTime;
             playerTurn = false;
             history.push(move.san);
             board.position(game.fen());
-            if (!playerTurn) {
-                setTimeout(makeAIMove, 1000);
-            }
+            
+            getTimeFromAPI(function (time) {
+                AiMoveTime = time;
+                
+                
 
+            });
+            
+            
+            if (!playerTurn) {
+                setTimeout(makeAIMove, AiMoveTime * 1000);
+            }
+            
+            
             // Track captured pieces
             if (move.captured) {
                 if (move.color === 'w') {
@@ -525,21 +565,7 @@ $(document).ready(function () {
         }
 
     }
-    /*
-    function onMouseenterSquare (evt, domEvt) {
-        // do nothing if we are not pending an Arrow
-        if (!startingSquare) return
-        // remove the existing tmp arrow if necessary
-        if (tmpArrowId) {
-            board.removeArrow(tmpArrowId)
-        }
-        // add a tmp arrow to the board
-        tmpArrowId = board.addArrow({
-            start: startingSquare,
-            end: evt.square
-        })
-    }
-*/
+
     $('#board').on('touchstart', { passive: true }, function (e) {
         var touch = e.originalEvent.touches[0];
         
