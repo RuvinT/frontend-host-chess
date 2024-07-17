@@ -43,6 +43,7 @@ $(document).ready(function () {
     let isPlaying = false;
     var moveNumber = 0;
     var AiMoveTime = 1;
+    var selectedPlayer = 'magnus'
     var players = {
         "Magnus Carlsen": "./img/magnus.png",
         "Garry Kasparov": "./img/Garry Kasparov.png",
@@ -66,7 +67,7 @@ $(document).ready(function () {
     $("#bottomPlayerName").text("Player");
 
     function updatePlayerDetails() {
-        var selectedPlayer = $("#grandmaster").val();
+        selectedPlayer = $("#grandmaster").val();
         var playerImage = players[selectedPlayer];
         $("#topPlayerImage").attr("src", playerImage);
         $("#topPlayerName").text(selectedPlayer);
@@ -279,7 +280,9 @@ $(document).ready(function () {
             url: 'https://dolphin-app-evjrt.ondigitalocean.app/get_move',
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ board: game.fen() }),
+            data: JSON.stringify({ board: game.fen(),
+                player: selectedPlayer
+             }),
             success: function (response) {
 
 
