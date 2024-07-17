@@ -101,10 +101,10 @@ $(document).ready(function () {
         }
         board.orientation(playerColor);
         updateCapturedPieces()
-        if (playerColor === 'black') {
-            playerTurn = false; // It's AI's turn
-            setTimeout(makeAIMove, 250); // AI makes the first move
-        }
+        
+        playerTurn = false; // It's AI's turn
+        setTimeout(makeAIMove, 250); // AI makes the first move
+    
 
 
     });
