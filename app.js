@@ -274,7 +274,7 @@ $(document).ready(function () {
 
     function makeAIMove() {
         
-
+        // ajax
         $.ajax({
             //http://127.0.0.1:5000
             url: 'https://dolphin-app-evjrt.ondigitalocean.app/get_move',
